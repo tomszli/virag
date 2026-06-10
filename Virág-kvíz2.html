@@ -1,0 +1,515 @@
+<!DOCTYPE html>
+<html lang="hu">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Virág Kvíz - GitHub Pages</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/mammoth/1.6.0/mammoth.browser.min.js"></script>
+<style>
+    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+    body { font-family: 'Inter', sans-serif; }
+    
+    .quiz-card {
+        backdrop-filter: blur(16px);
+        background: rgba(255, 255, 255, 0.95);
+    }
+    
+    .btn-primary {
+        background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+        transition: all 0.3s ease;
+    }
+    
+    .btn-primary:hover:not(:disabled) {
+        transform: translateY(-2px);
+        box-shadow: 0 12px 24px rgba(16, 185, 129, 0.3);
+    }
+    
+    .btn-primary:disabled {
+        opacity: 0.5;
+        cursor: not-allowed;
+    }
+    
+    .answer-btn {
+        transition: all 0.2s ease;
+    }
+    
+    .answer-btn:hover:not(:disabled) {
+        transform: scale(1.02);
+        box-shadow: 0 8px 16px rgba(0, 0, 0, 0.1);
+    }
+    
+    .correct {
+        background: linear-gradient(135deg, #10b981 0%, #059669 100%) !important;
+        color: white !important;
+        border-color: #059669 !important;
+    }
+    
+    .incorrect {
+        background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%) !important;
+        color: white !important;
+        border-color: #dc2626 !important;
+    }
+    
+    .fade-in {
+        animation: fadeIn 0.4s ease-in;
+    }
+    
+    @keyframes fadeIn {
+        from { opacity: 0; transform: translateY(10px); }
+        to { opacity: 1; transform: translateY(0); }
+    }
+    
+    .pulse-loader {
+        animation: pulse 1.5s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+    }
+    
+    @keyframes pulse {
+        0%, 100% { opacity: 1; }
+        50% { opacity: .5; }
+    }
+    
+    .checkbox-custom {
+        appearance: none;
+        width: 1.25rem;
+        height: 1.25rem;
+        border: 2px solid #d1d5db;
+        border-radius: 0.375rem;
+        transition: all 0.2s;
+        cursor: pointer;
+        position: relative;
+    }
+    
+    .checkbox-custom:checked {
+        background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+        border-color: #059669;
+    }
+    
+    .checkbox-custom:checked::after {
+        content: '✓';
+        position: absolute;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        color: white;
+        font-size: 0.875rem;
+        font-weight: bold;
+    }
+</style>
+</head>
+<body class="min-h-screen bg-gradient-to-br from-emerald-50 via-teal-50 to-cyan-50">
+    <div class="container mx-auto px-4 py-6 md:py-12 max-w-4xl">
+        <!-- Header -->
+        <div class="text-center mb-8 fade-in">
+            <div class="inline-flex items-center justify-center w-16 h-16 rounded-full bg-gradient-to-br from-emerald-500 to-teal-600 mb-4 shadow-lg">
+                <span class="text-3xl">🌸</span>
+            </div>
+            <h1 class="text-4xl md:text-5xl font-bold text-gray-800 mb-2">Virág Kvíz</h1>
+            <div class="inline-flex items-center gap-2 px-4 py-2 bg-emerald-100 rounded-full text-sm text-emerald-700 font-medium">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z" />
+                </svg>
+                GitHub Pages verzió - automatikusan betölti a repóban lévő docx fájlokat
+            </div>
+        </div>
+
+        <!-- Setup Screen -->
+        <div id="setupScreen" class="quiz-card rounded-2xl shadow-2xl p-6 md:p-8 fade-in">
+            <h2 class="text-2xl font-bold text-gray-800 mb-6">Kvíz beállítása</h2>
+            
+            <div class="mb-6">
+                <p class="text-gray-600 mb-4">Válaszd ki, mely dokumentumokból szeretnél tanulni:</p>
+                <div class="space-y-3" id="fileCheckboxes">
+                    <label class="flex items-center gap-3 p-4 rounded-xl bg-gray-50 hover:bg-gray-100 cursor-pointer transition">
+                        <input type="checkbox" class="checkbox-custom" value="virág1.docx" checked>
+                        <span class="font-medium text-gray-700">virág1.docx</span>
+                    </label>
+                    <label class="flex items-center gap-3 p-4 rounded-xl bg-gray-50 hover:bg-gray-100 cursor-pointer transition">
+                        <input type="checkbox" class="checkbox-custom" value="virág2.docx" checked>
+                        <span class="font-medium text-gray-700">virág2.docx</span>
+                    </label>
+                    <label class="flex items-center gap-3 p-4 rounded-xl bg-gray-50 hover:bg-gray-100 cursor-pointer transition">
+                        <input type="checkbox" class="checkbox-custom" value="virág3.docx" checked>
+                        <span class="font-medium text-gray-700">virág3.docx</span>
+                    </label>
+                    <label class="flex items-center gap-3 p-4 rounded-xl bg-gray-50 hover:bg-gray-100 cursor-pointer transition">
+                        <input type="checkbox" class="checkbox-custom" value="virág4.docx" checked>
+                        <span class="font-medium text-gray-700">virág4.docx</span>
+                    </label>
+                    <label class="flex items-center gap-3 p-4 rounded-xl bg-gray-50 hover:bg-gray-100 cursor-pointer transition">
+                        <input type="checkbox" class="checkbox-custom" value="virág5.docx" checked>
+                        <span class="font-medium text-gray-700">virág5.docx</span>
+                    </label>
+                </div>
+            </div>
+
+            <div id="errorMessages" class="hidden mb-4 p-4 bg-red-50 border-l-4 border-red-500 rounded-lg">
+                <p class="text-red-700 font-medium mb-2">Hiba történt:</p>
+                <ul id="errorList" class="text-red-600 text-sm space-y-1"></ul>
+            </div>
+
+            <div id="loadingState" class="hidden mb-4 p-4 bg-blue-50 border-l-4 border-blue-500 rounded-lg">
+                <div class="flex items-center gap-3">
+                    <svg class="animate-spin h-5 w-5 text-blue-600" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                        <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                        <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                    </svg>
+                    <div>
+                        <p class="text-blue-700 font-medium">Dokumentumok betöltése...</p>
+                        <p id="loadingProgress" class="text-blue-600 text-sm"></p>
+                    </div>
+                </div>
+            </div>
+
+            <button id="startBtn" class="btn-primary w-full py-4 px-6 rounded-xl text-white font-semibold text-lg shadow-lg">
+                Kvíz indítása
+            </button>
+        </div>
+
+        <!-- Quiz Screen -->
+        <div id="quizScreen" class="hidden">
+            <!-- Stats Bar -->
+            <div class="quiz-card rounded-2xl shadow-xl p-4 md:p-6 mb-6 fade-in">
+                <div class="grid grid-cols-3 gap-4 text-center">
+                    <div>
+                        <p class="text-gray-500 text-sm mb-1">Kérdés</p>
+                        <p class="text-2xl font-bold text-gray-800"><span id="currentQuestion">0</span>/<span id="totalQuestions">0</span></p>
+                    </div>
+                    <div>
+                        <p class="text-gray-500 text-sm mb-1">Pontszám</p>
+                        <p class="text-2xl font-bold text-emerald-600" id="score">0</p>
+                    </div>
+                    <div>
+                        <p class="text-gray-500 text-sm mb-1">Pontosság</p>
+                        <p class="text-2xl font-bold text-teal-600"><span id="accuracy">0</span>%</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Question Card -->
+            <div class="quiz-card rounded-2xl shadow-2xl p-6 md:p-8 mb-6 fade-in">
+                <div id="imageContainer" class="mb-6 rounded-xl overflow-hidden bg-gray-100 flex items-center justify-center min-h-[300px] max-h-[400px]">
+                    <img id="questionImage" class="w-full h-full object-contain" alt="Virág kép">
+                </div>
+
+                <div id="questionPhase" class="mb-4">
+                    <h3 class="text-xl font-semibold text-gray-800 mb-4" id="questionTitle">Mi a latin neve?</h3>
+                    <div id="answerButtons" class="grid grid-cols-1 md:grid-cols-2 gap-3"></div>
+                </div>
+
+                <div id="feedback" class="hidden p-4 rounded-xl mb-4 text-center font-medium"></div>
+            </div>
+
+            <!-- Control Buttons -->
+            <div class="flex gap-3 fade-in">
+                <button id="stopBtn" class="flex-1 py-3 px-6 rounded-xl bg-gray-200 hover:bg-gray-300 text-gray-700 font-semibold transition">
+                    Kvíz befejezése
+                </button>
+                <button id="nextBtn" class="hidden flex-1 py-3 px-6 rounded-xl btn-primary text-white font-semibold">
+                    Következő kérdés
+                </button>
+            </div>
+        </div>
+
+        <!-- Results Screen -->
+        <div id="resultsScreen" class="hidden quiz-card rounded-2xl shadow-2xl p-6 md:p-8 fade-in">
+            <div class="text-center mb-8">
+                <div class="inline-flex items-center justify-center w-20 h-20 rounded-full bg-gradient-to-br from-emerald-500 to-teal-600 mb-4 shadow-lg">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-10 w-10 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                    </svg>
+                </div>
+                <h2 class="text-3xl font-bold text-gray-800 mb-2">Kvíz befejezve!</h2>
+                <p class="text-gray-600">Íme az eredményeid</p>
+            </div>
+
+            <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
+                <div class="text-center p-4 bg-emerald-50 rounded-xl">
+                    <p class="text-gray-500 text-sm mb-1">Pontszám</p>
+                    <p class="text-3xl font-bold text-emerald-600" id="finalScore">0</p>
+                </div>
+                <div class="text-center p-4 bg-teal-50 rounded-xl">
+                    <p class="text-gray-500 text-sm mb-1">Kérdések</p>
+                    <p class="text-3xl font-bold text-teal-600" id="finalTotal">0</p>
+                </div>
+                <div class="text-center p-4 bg-cyan-50 rounded-xl">
+                    <p class="text-gray-500 text-sm mb-1">Pontosság</p>
+                    <p class="text-3xl font-bold text-cyan-600"><span id="finalAccuracy">0</span>%</p>
+                </div>
+                <div class="text-center p-4 bg-blue-50 rounded-xl">
+                    <p class="text-gray-500 text-sm mb-1">Helyes</p>
+                    <p class="text-3xl font-bold text-blue-600" id="finalCorrect">0</p>
+                </div>
+            </div>
+
+            <button id="restartBtn" class="btn-primary w-full py-4 px-6 rounded-xl text-white font-semibold text-lg shadow-lg">
+                Új kvíz indítása
+            </button>
+        </div>
+    </div>
+
+    <script>
+        const HARDCODED_FILES = ['virág1.docx', 'virág2.docx', 'virág3.docx', 'virág4.docx', 'virág5.docx'];
+        
+        let quizData = [];
+        let currentQuestionIndex = 0;
+        let score = 0;
+        let correctAnswers = 0;
+        let currentPhase = 'latin'; // 'latin' or 'hungarian'
+        let currentQuestionData = null;
+        let answered = false;
+
+        const setupScreen = document.getElementById('setupScreen');
+        const quizScreen = document.getElementById('quizScreen');
+        const resultsScreen = document.getElementById('resultsScreen');
+        const startBtn = document.getElementById('startBtn');
+        const stopBtn = document.getElementById('stopBtn');
+        const nextBtn = document.getElementById('nextBtn');
+        const restartBtn = document.getElementById('restartBtn');
+        const loadingState = document.getElementById('loadingState');
+        const loadingProgress = document.getElementById('loadingProgress');
+        const errorMessages = document.getElementById('errorMessages');
+        const errorList = document.getElementById('errorList');
+
+        startBtn.addEventListener('click', loadAndStartQuiz);
+        stopBtn.addEventListener('click', showResults);
+        nextBtn.addEventListener('click', nextQuestion);
+        restartBtn.addEventListener('click', resetQuiz);
+
+        async function loadAndStartQuiz() {
+            const checkboxes = document.querySelectorAll('#fileCheckboxes input[type="checkbox"]:checked');
+            const selectedFiles = Array.from(checkboxes).map(cb => cb.value);
+            
+            if (selectedFiles.length === 0) {
+                showError('Válassz legalább egy dokumentumot!');
+                return;
+            }
+
+            errorMessages.classList.add('hidden');
+            loadingState.classList.remove('hidden');
+            startBtn.disabled = true;
+            
+            quizData = [];
+            const errors = [];
+
+            for (let i = 0; i < selectedFiles.length; i++) {
+                const filename = selectedFiles[i];
+                loadingProgress.textContent = `${i + 1}/${selectedFiles.length} - ${filename}`;
+                
+                try {
+                    const response = await fetch(`./${filename}`);
+                    if (!response.ok) {
+                        throw new Error(`HTTP ${response.status}`);
+                    }
+                    
+                    const arrayBuffer = await response.arrayBuffer();
+                    const result = await mammoth.convertToHtml({ arrayBuffer });
+                    const html = result.value;
+                    
+                    // Parse HTML to extract tables with images and names
+                    const parser = new DOMParser();
+                    const doc = parser.parseFromString(html, 'text/html');
+                    const tables = doc.querySelectorAll('table');
+                    
+                    tables.forEach(table => {
+                        const rows = table.querySelectorAll('tr');
+                        rows.forEach((row, idx) => {
+                            if (idx === 0) return; // Skip header
+                            const cells = row.querySelectorAll('td');
+                            if (cells.length >= 3) {
+                                const imgElement = cells[0].querySelector('img');
+                                const latinName = cells[1]?.textContent.trim();
+                                const hungarianName = cells[2]?.textContent.trim();
+                                
+                                if (imgElement && latinName && hungarianName) {
+                                    quizData.push({
+                                        image: imgElement.src,
+                                        latinName: latinName,
+                                        hungarianName: hungarianName,
+                                        source: filename
+                                    });
+                                }
+                            }
+                        });
+                    });
+                } catch (err) {
+                    errors.push(`${filename}: ${err.message}`);
+                    console.error(`Error loading ${filename}:`, err);
+                }
+            }
+
+            loadingState.classList.add('hidden');
+            startBtn.disabled = false;
+
+            if (errors.length > 0) {
+                errorList.innerHTML = errors.map(e => `<li>• ${e}</li>`).join('');
+                errorMessages.classList.remove('hidden');
+            }
+
+            if (quizData.length === 0) {
+                showError('Nem sikerült betölteni egy dokumentumot sem, vagy nem található megfelelő táblázat bennük.');
+                return;
+            }
+
+            // Shuffle questions
+            quizData = shuffleArray(quizData);
+            startQuiz();
+        }
+
+        function showError(message) {
+            errorList.innerHTML = `<li>• ${message}</li>`;
+            errorMessages.classList.remove('hidden');
+        }
+
+        function startQuiz() {
+            currentQuestionIndex = 0;
+            score = 0;
+            correctAnswers = 0;
+            currentPhase = 'latin';
+            answered = false;
+            
+            setupScreen.classList.add('hidden');
+            resultsScreen.classList.add('hidden');
+            quizScreen.classList.remove('hidden');
+            
+            updateStats();
+            showQuestion();
+        }
+
+        function showQuestion() {
+            if (currentQuestionIndex >= quizData.length) {
+                showResults();
+                return;
+            }
+
+            currentQuestionData = quizData[currentQuestionIndex];
+            currentPhase = 'latin';
+            answered = false;
+            
+            document.getElementById('questionImage').src = currentQuestionData.image;
+            document.getElementById('questionTitle').textContent = 'Mi a latin neve?';
+            document.getElementById('feedback').classList.add('hidden');
+            nextBtn.classList.add('hidden');
+            
+            renderAnswers('latin');
+            updateStats();
+        }
+
+        function renderAnswers(phase) {
+            const answersDiv = document.getElementById('answerButtons');
+            answersDiv.innerHTML = '';
+            
+            const correctAnswer = phase === 'latin' ? currentQuestionData.latinName : currentQuestionData.hungarianName;
+            const field = phase === 'latin' ? 'latinName' : 'hungarianName';
+            
+            // Get 3 random wrong answers
+            const wrongAnswers = quizData
+                .filter(q => q[field] !== correctAnswer)
+                .map(q => q[field])
+                .filter((v, i, a) => a.indexOf(v) === i) // unique
+                .sort(() => Math.random() - 0.5)
+                .slice(0, 3);
+            
+            const allAnswers = shuffleArray([correctAnswer, ...wrongAnswers]);
+            
+            allAnswers.forEach(answer => {
+                const btn = document.createElement('button');
+                btn.className = 'answer-btn p-4 rounded-xl bg-white border-2 border-gray-200 text-gray-700 font-medium text-left hover:border-emerald-300 transition';
+                btn.textContent = answer;
+                btn.onclick = () => handleAnswer(answer, correctAnswer, btn);
+                answersDiv.appendChild(btn);
+            });
+        }
+
+        function handleAnswer(selected, correct, buttonElement) {
+            if (answered) return;
+            answered = true;
+            
+            const buttons = document.querySelectorAll('#answerButtons button');
+            buttons.forEach(btn => btn.disabled = true);
+            
+            const isCorrect = selected === correct;
+            const feedback = document.getElementById('feedback');
+            
+            if (isCorrect) {
+                buttonElement.classList.add('correct');
+                feedback.className = 'p-4 rounded-xl mb-4 text-center font-medium bg-emerald-50 text-emerald-700';
+                feedback.textContent = '✓ Helyes válasz!';
+                
+                if (currentPhase === 'hungarian') {
+                    score += 2;
+                    correctAnswers++;
+                } else {
+                    score += 1;
+                }
+            } else {
+                buttonElement.classList.add('incorrect');
+                buttons.forEach(btn => {
+                    if (btn.textContent === correct) {
+                        btn.classList.add('correct');
+                    }
+                });
+                feedback.className = 'p-4 rounded-xl mb-4 text-center font-medium bg-red-50 text-red-700';
+                feedback.textContent = `✗ Helytelen. A helyes válasz: ${correct}`;
+            }
+            
+            feedback.classList.remove('hidden');
+            updateStats();
+            
+            setTimeout(() => {
+                if (currentPhase === 'latin' && isCorrect) {
+                    // Move to Hungarian name phase
+                    currentPhase = 'hungarian';
+                    answered = false;
+                    document.getElementById('questionTitle').textContent = 'Mi a magyar neve?';
+                    feedback.classList.add('hidden');
+                    renderAnswers('hungarian');
+                } else {
+                    nextBtn.classList.remove('hidden');
+                }
+            }, 1500);
+        }
+
+        function nextQuestion() {
+            currentQuestionIndex++;
+            showQuestion();
+        }
+
+        function updateStats() {
+            document.getElementById('currentQuestion').textContent = currentQuestionIndex + 1;
+            document.getElementById('totalQuestions').textContent = quizData.length;
+            document.getElementById('score').textContent = score;
+            const accuracy = currentQuestionIndex > 0 ? Math.round((correctAnswers / currentQuestionIndex) * 100) : 0;
+            document.getElementById('accuracy').textContent = accuracy;
+        }
+
+        function showResults() {
+            quizScreen.classList.add('hidden');
+            resultsScreen.classList.remove('hidden');
+            
+            document.getElementById('finalScore').textContent = score;
+            document.getElementById('finalTotal').textContent = quizData.length;
+            document.getElementById('finalCorrect').textContent = correctAnswers;
+            const accuracy = quizData.length > 0 ? Math.round((correctAnswers / quizData.length) * 100) : 0;
+            document.getElementById('finalAccuracy').textContent = accuracy;
+        }
+
+        function resetQuiz() {
+            resultsScreen.classList.add('hidden');
+            setupScreen.classList.remove('hidden');
+            errorMessages.classList.add('hidden');
+            quizData = [];
+        }
+
+        function shuffleArray(array) {
+            const newArray = [...array];
+            for (let i = newArray.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [newArray[i], newArray[j]] = [newArray[j], newArray[i]];
+            }
+            return newArray;
+        }
+    </script>
+<script>(function(){document.addEventListener("click",function(e){var a=e.target.closest("[data-product-id]");if(!a)return;e.preventDefault();var pid=a.getAttribute("data-product-id");if(pid)parent.postMessage({type:"ecto-artifact-link-click",productId:pid},"*")})})();</script>
+</body>
+</html>
