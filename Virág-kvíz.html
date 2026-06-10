@@ -1,0 +1,621 @@
+<!DOCTYPE html>
+<html lang="hu">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Virág Kvíz - DOCX-ból</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<script src="https://unpkg.com/mammoth@1.7.0/mammoth.browser.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+  
+  body {
+    font-family: 'Inter', sans-serif;
+  }
+  
+  .btn-option {
+    transition: all 0.2s ease;
+  }
+  
+  .btn-option:hover:not(:disabled) {
+    transform: translateY(-2px);
+    box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+  }
+  
+  .btn-option:active:not(:disabled) {
+    transform: translateY(0);
+  }
+  
+  .btn-correct {
+    background: linear-gradient(135deg, #10b981 0%, #059669 100%) !important;
+    color: white !important;
+    border-color: #059669 !important;
+  }
+  
+  .btn-incorrect {
+    background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%) !important;
+    color: white !important;
+    border-color: #dc2626 !important;
+  }
+  
+  .btn-disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+  }
+  
+  .fade-in {
+    animation: fadeIn 0.4s ease-in;
+  }
+  
+  @keyframes fadeIn {
+    from { opacity: 0; transform: translateY(10px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+  
+  .pulse {
+    animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+  }
+  
+  @keyframes pulse {
+    0%, 100% { opacity: 1; }
+    50% { opacity: .5; }
+  }
+  
+  .progress-bar {
+    transition: width 0.5s ease;
+  }
+</style>
+</head>
+<body class="bg-gradient-to-br from-emerald-50 via-white to-teal-50 min-h-screen">
+<div class="max-w-5xl mx-auto p-4 sm:p-6 lg:p-8">
+  
+  <!-- Header -->
+  <div class="text-center mb-8">
+    <div class="inline-flex items-center justify-center w-16 h-16 bg-gradient-to-br from-emerald-500 to-teal-600 rounded-2xl mb-4 shadow-lg">
+      <svg class="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"></path>
+      </svg>
+    </div>
+    <h1 class="text-3xl sm:text-4xl font-bold text-gray-900 mb-2">Virág Felismerő Kvíz</h1>
+    <p class="text-gray-600">Tölts be .docx fájlokat és teszteld tudásod!</p>
+  </div>
+
+  <!-- Upload Section -->
+  <div id="uploadSection" class="bg-white rounded-2xl shadow-xl p-6 sm:p-8 mb-6 border border-gray-100">
+    <h2 class="text-xl font-semibold text-gray-800 mb-4 flex items-center gap-2">
+      <svg class="w-6 h-6 text-emerald-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"></path>
+      </svg>
+      Fájlok betöltése
+    </h2>
+    
+    <div class="space-y-4">
+      <label class="block">
+        <div class="border-2 border-dashed border-emerald-300 rounded-xl p-8 text-center cursor-pointer hover:border-emerald-500 hover:bg-emerald-50 transition-all">
+          <svg class="w-12 h-12 text-emerald-500 mx-auto mb-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z"></path>
+          </svg>
+          <p class="text-gray-700 font-medium mb-1">Kattints vagy húzd ide a .docx fájlokat</p>
+          <p class="text-sm text-gray-500">Több fájlt is kiválaszthatsz egyszerre</p>
+          <input type="file" id="fileInput" multiple accept=".docx" class="hidden">
+        </div>
+      </label>
+      
+      <div id="fileList" class="hidden">
+        <h3 class="text-sm font-medium text-gray-700 mb-2">Betöltött fájlok:</h3>
+        <div id="fileListContent" class="space-y-2"></div>
+      </div>
+      
+      <div id="loadingIndicator" class="hidden">
+        <div class="flex items-center gap-3 text-emerald-600">
+          <svg class="animate-spin h-5 w-5" fill="none" viewBox="0 0 24 24">
+            <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+            <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+          </svg>
+          <span class="font-medium">Fájlok feldolgozása...</span>
+        </div>
+      </div>
+      
+      <div id="statsPreview" class="hidden bg-emerald-50 rounded-xl p-4 border border-emerald-200">
+        <p class="text-emerald-800 font-medium">
+          <span id="flowerCount">0</span> virág találat betöltve
+        </p>
+      </div>
+    </div>
+    
+    <!-- Instructions -->
+    <div class="mt-6 p-4 bg-blue-50 rounded-xl border border-blue-200">
+      <h3 class="font-semibold text-blue-900 mb-2 flex items-center gap-2">
+        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+        </svg>
+        Fájl formátum követelmény
+      </h3>
+      <p class="text-sm text-blue-800 mb-2">A .docx fájlokban lévő táblázatoknak tartalmazniuk kell a következő oszlopokat:</p>
+      <ul class="text-sm text-blue-800 space-y-1 ml-4">
+        <li>• <strong>Kép</strong> a virágról</li>
+        <li>• <strong>Latin név</strong></li>
+        <li>• <strong>Magyar név</strong></li>
+      </ul>
+    </div>
+  </div>
+
+  <!-- Quiz Section -->
+  <div id="quizSection" class="hidden">
+    <!-- Stats Bar -->
+    <div class="bg-white rounded-2xl shadow-xl p-4 sm:p-6 mb-6 border border-gray-100">
+      <div class="grid grid-cols-3 gap-4 text-center">
+        <div>
+          <p class="text-sm text-gray-600 mb-1">Kérdések</p>
+          <p class="text-2xl font-bold text-gray-900" id="totalQuestions">0</p>
+        </div>
+        <div>
+          <p class="text-sm text-gray-600 mb-1">Helyes</p>
+          <p class="text-2xl font-bold text-emerald-600" id="correctAnswers">0</p>
+        </div>
+        <div>
+          <p class="text-sm text-gray-600 mb-1">Pontosság</p>
+          <p class="text-2xl font-bold text-teal-600" id="accuracy">0%</p>
+        </div>
+      </div>
+      <div class="mt-4 bg-gray-200 rounded-full h-2 overflow-hidden">
+        <div id="progressBar" class="progress-bar bg-gradient-to-r from-emerald-500 to-teal-600 h-full" style="width: 0%"></div>
+      </div>
+    </div>
+
+    <!-- Question Card -->
+    <div class="bg-white rounded-2xl shadow-xl p-6 sm:p-8 mb-6 border border-gray-100">
+      <div id="questionContent" class="fade-in">
+        <!-- Image -->
+        <div class="mb-6">
+          <div class="aspect-square max-w-md mx-auto bg-gray-100 rounded-2xl overflow-hidden shadow-lg">
+            <img id="flowerImage" src="" alt="Virág" class="w-full h-full object-cover">
+          </div>
+        </div>
+
+        <!-- Question Phase -->
+        <div id="questionPhase">
+          <h3 class="text-xl font-semibold text-gray-800 mb-4 text-center" id="questionText">
+            Melyik a helyes latin név?
+          </h3>
+          <div id="optionsContainer" class="grid grid-cols-1 sm:grid-cols-2 gap-3"></div>
+        </div>
+
+        <!-- Result Phase -->
+        <div id="resultPhase" class="hidden text-center">
+          <div id="resultIcon" class="mb-4"></div>
+          <h3 class="text-2xl font-bold mb-2" id="resultText"></h3>
+          <div class="bg-gray-50 rounded-xl p-4 mb-4 text-left max-w-md mx-auto">
+            <p class="text-sm text-gray-600 mb-1">Latin név:</p>
+            <p class="font-semibold text-gray-900 mb-3" id="correctLatin"></p>
+            <p class="text-sm text-gray-600 mb-1">Magyar név:</p>
+            <p class="font-semibold text-gray-900" id="correctHungarian"></p>
+          </div>
+          <button id="nextButton" class="bg-gradient-to-r from-emerald-500 to-teal-600 text-white px-8 py-3 rounded-xl font-semibold hover:from-emerald-600 hover:to-teal-700 transition-all shadow-lg hover:shadow-xl">
+            Következő kérdés →
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Controls -->
+    <div class="flex gap-3">
+      <button id="stopButton" class="flex-1 bg-white text-gray-700 px-6 py-3 rounded-xl font-semibold border-2 border-gray-300 hover:bg-gray-50 transition-all">
+        Kvíz befejezése
+      </button>
+    </div>
+  </div>
+
+  <!-- Results Section -->
+  <div id="resultsSection" class="hidden">
+    <div class="bg-white rounded-2xl shadow-xl p-8 text-center border border-gray-100">
+      <div class="inline-flex items-center justify-center w-20 h-20 bg-gradient-to-br from-emerald-500 to-teal-600 rounded-full mb-4">
+        <svg class="w-10 h-10 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+        </svg>
+      </div>
+      <h2 class="text-3xl font-bold text-gray-900 mb-2">Kvíz befejezve!</h2>
+      <p class="text-gray-600 mb-6">Gratulálunk a teljesítéshez</p>
+      
+      <div class="grid grid-cols-3 gap-4 mb-8 max-w-md mx-auto">
+        <div class="bg-gray-50 rounded-xl p-4">
+          <p class="text-sm text-gray-600 mb-1">Összes</p>
+          <p class="text-3xl font-bold text-gray-900" id="finalTotal">0</p>
+        </div>
+        <div class="bg-emerald-50 rounded-xl p-4">
+          <p class="text-sm text-emerald-700 mb-1">Helyes</p>
+          <p class="text-3xl font-bold text-emerald-600" id="finalCorrect">0</p>
+        </div>
+        <div class="bg-teal-50 rounded-xl p-4">
+          <p class="text-sm text-teal-700 mb-1">Pontosság</p>
+          <p class="text-3xl font-bold text-teal-600" id="finalAccuracy">0%</p>
+        </div>
+      </div>
+      
+      <button id="restartButton" class="bg-gradient-to-r from-emerald-500 to-teal-600 text-white px-8 py-4 rounded-xl font-semibold hover:from-emerald-600 hover:to-teal-700 transition-all shadow-lg hover:shadow-xl">
+        Új kvíz indítása
+      </button>
+    </div>
+  </div>
+</div>
+
+<script>
+const state = {
+  flowers: [],
+  currentQuestion: null,
+  questionQueue: [],
+  stats: {
+    total: 0,
+    correct: 0
+  },
+  phase: 'latin', // 'latin' or 'hungarian'
+  latinAnswer: null,
+  hungarianAnswer: null
+};
+
+const el = {
+  fileInput: document.getElementById('fileInput'),
+  fileList: document.getElementById('fileList'),
+  fileListContent: document.getElementById('fileListContent'),
+  loadingIndicator: document.getElementById('loadingIndicator'),
+  statsPreview: document.getElementById('statsPreview'),
+  flowerCount: document.getElementById('flowerCount'),
+  uploadSection: document.getElementById('uploadSection'),
+  quizSection: document.getElementById('quizSection'),
+  resultsSection: document.getElementById('resultsSection'),
+  flowerImage: document.getElementById('flowerImage'),
+  questionText: document.getElementById('questionText'),
+  optionsContainer: document.getElementById('optionsContainer'),
+  questionPhase: document.getElementById('questionPhase'),
+  resultPhase: document.getElementById('resultPhase'),
+  resultIcon: document.getElementById('resultIcon'),
+  resultText: document.getElementById('resultText'),
+  correctLatin: document.getElementById('correctLatin'),
+  correctHungarian: document.getElementById('correctHungarian'),
+  nextButton: document.getElementById('nextButton'),
+  stopButton: document.getElementById('stopButton'),
+  restartButton: document.getElementById('restartButton'),
+  totalQuestions: document.getElementById('totalQuestions'),
+  correctAnswers: document.getElementById('correctAnswers'),
+  accuracy: document.getElementById('accuracy'),
+  progressBar: document.getElementById('progressBar'),
+  finalTotal: document.getElementById('finalTotal'),
+  finalCorrect: document.getElementById('finalCorrect'),
+  finalAccuracy: document.getElementById('finalAccuracy')
+};
+
+// File input handler
+el.fileInput.addEventListener('change', async (e) => {
+  const files = Array.from(e.target.files);
+  if (files.length === 0) return;
+  
+  el.loadingIndicator.classList.remove('hidden');
+  el.fileList.classList.add('hidden');
+  
+  const allFlowers = [];
+  
+  for (const file of files) {
+    try {
+      const flowers = await parseDocxFile(file);
+      allFlowers.push(...flowers);
+      
+      // Add to file list
+      const fileItem = document.createElement('div');
+      fileItem.className = 'flex items-center gap-2 text-sm bg-gray-50 rounded-lg p-2';
+      fileItem.innerHTML = `
+        <svg class="w-4 h-4 text-emerald-600" fill="currentColor" viewBox="0 0 20 20">
+          <path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"></path>
+        </svg>
+        <span class="text-gray-700">${file.name}</span>
+        <span class="text-gray-500">(${flowers.length} virág)</span>
+      `;
+      el.fileListContent.appendChild(fileItem);
+    } catch (err) {
+      console.error(`Hiba a ${file.name} feldolgozásakor:`, err);
+    }
+  }
+  
+  // Deduplicate by latin + hungarian name
+  const uniqueFlowers = [];
+  const seen = new Set();
+  for (const flower of allFlowers) {
+    const key = `${flower.latin}::${flower.hungarian}`;
+    if (!seen.has(key)) {
+      seen.add(key);
+      uniqueFlowers.push(flower);
+    }
+  }
+  
+  state.flowers = uniqueFlowers;
+  el.loadingIndicator.classList.add('hidden');
+  el.fileList.classList.remove('hidden');
+  el.statsPreview.classList.remove('hidden');
+  el.flowerCount.textContent = state.flowers.length;
+  
+  if (state.flowers.length >= 4) {
+    setTimeout(() => startQuiz(), 500);
+  } else {
+    alert('Legalább 4 virág szükséges a kvíz indításához!');
+  }
+});
+
+async function parseDocxFile(file) {
+  const arrayBuffer = await file.arrayBuffer();
+  const zip = await JSZip.loadAsync(arrayBuffer);
+  
+  // Extract images
+  const images = {};
+  const mediaFolder = zip.folder('word/media');
+  if (mediaFolder) {
+    const imageFiles = [];
+    mediaFolder.forEach((relPath, file) => {
+      imageFiles.push({ path: relPath, file });
+    });
+    
+    for (const img of imageFiles) {
+      const blob = await img.file.async('blob');
+      images[img.path] = URL.createObjectURL(blob);
+    }
+  }
+  
+  // Parse with mammoth to extract tables with image context
+  const result = await mammoth.convertToHtml({
+    arrayBuffer: arrayBuffer,
+    convertImage: mammoth.images.imgElement((image) => {
+      return image.readAsArrayBuffer().then(() => {
+        // We handle images separately via zip
+        return { src: "" };
+      });
+    })
+  });
+  
+  const flowers = [];
+  const parser = new DOMParser();
+  const doc = parser.parseFromString(result.value, 'text/html');
+  const tables = doc.querySelectorAll('table');
+  
+  // Also extract relationships to map images to cells
+  let rels = {};
+  const relsFile = zip.file('word/_rels/document.xml.rels');
+  if (relsFile) {
+    const relsXml = await relsFile.async('string');
+    const relsDoc = parser.parseFromString(relsXml, 'text/xml');
+    relsDoc.querySelectorAll('Relationship').forEach(rel => {
+      const id = rel.getAttribute('Id');
+      const target = rel.getAttribute('Target');
+      if (target.startsWith('media/')) {
+        rels[id] = target.replace('media/', '');
+      }
+    });
+  }
+  
+  // Parse document.xml to find images in tables
+  const docXmlFile = zip.file('word/document.xml');
+  if (docXmlFile) {
+    const docXml = await docXmlFile.async('string');
+    const docXmlDoc = parser.parseFromString(docXml, 'application/xml');
+    
+    // Find all tables and extract image + text data
+    const docTables = docXmlDoc.querySelectorAll('w\\:tbl, tbl');
+    
+    for (let tableIdx = 0; tableIdx < docTables.length; tableIdx++) {
+      const rows = docTables[tableIdx].querySelectorAll('w\\:tr, tr');
+      
+      // Try to find header row
+      let latinCol = -1, hungarianCol = -1, imageCol = -1;
+      if (rows.length > 0) {
+        const headerCells = rows[0].querySelectorAll('w\\:tc, tc');
+        headerCells.forEach((cell, idx) => {
+          const text = cell.textContent.toLowerCase();
+          if (text.includes('kép') || text.includes('image')) imageCol = idx;
+          if (text.includes('latin')) latinCol = idx;
+          if (text.includes('magyar') || text.includes('hungarian')) hungarianCol = idx;
+        });
+      }
+      
+      // If no headers found, assume order: image, latin, hungarian
+      if (latinCol === -1) latinCol = 1;
+      if (hungarianCol === -1) hungarianCol = 2;
+      if (imageCol === -1) imageCol = 0;
+      
+      // Process data rows
+      for (let rowIdx = 1; rowIdx < rows.length; rowIdx++) {
+        const cells = rows[rowIdx].querySelectorAll('w\\:tc, tc');
+        if (cells.length < 3) continue;
+        
+        let imageSrc = null;
+        const imageElements = cells[imageCol]?.querySelectorAll('a\\:blip, blip');
+        if (imageElements && imageElements.length > 0) {
+          const embed = imageElements[0].getAttribute('r:embed');
+          if (embed && rels[embed] && images[rels[embed]]) {
+            imageSrc = images[rels[embed]];
+          }
+        }
+        
+        const latinText = cells[latinCol]?.textContent.trim();
+        const hungarianText = cells[hungarianCol]?.textContent.trim();
+        
+        if (imageSrc && latinText && hungarianText) {
+          flowers.push({
+            image: imageSrc,
+            latin: latinText,
+            hungarian: hungarianText
+          });
+        }
+      }
+    }
+  }
+  
+  return flowers;
+}
+
+function startQuiz() {
+  el.uploadSection.classList.add('hidden');
+  el.quizSection.classList.remove('hidden');
+  el.resultsSection.classList.add('hidden');
+  
+  state.stats = { total: 0, correct: 0 };
+  state.questionQueue = shuffleArray([...state.flowers]);
+  
+  updateStats();
+  nextQuestion();
+}
+
+function nextQuestion() {
+  if (state.questionQueue.length === 0) {
+    state.questionQueue = shuffleArray([...state.flowers]);
+  }
+  
+  state.currentQuestion = state.questionQueue.shift();
+  state.phase = 'latin';
+  state.latinAnswer = null;
+  state.hungarianAnswer = null;
+  
+  el.flowerImage.src = state.currentQuestion.image;
+  el.questionPhase.classList.remove('hidden');
+  el.resultPhase.classList.add('hidden');
+  
+  showLatinQuestion();
+}
+
+function showLatinQuestion() {
+  el.questionText.textContent = 'Melyik a helyes latin név?';
+  const options = generateOptions('latin');
+  renderOptions(options, 'latin');
+}
+
+function showHungarianQuestion() {
+  el.questionText.textContent = 'Melyik a helyes magyar név?';
+  const options = generateOptions('hungarian');
+  renderOptions(options, 'hungarian');
+}
+
+function generateOptions(type) {
+  const correct = state.currentQuestion[type];
+  const allOptions = state.flowers.map(f => f[type]).filter(opt => opt !== correct);
+  const shuffled = shuffleArray(allOptions).slice(0, 3);
+  shuffled.push(correct);
+  return shuffleArray(shuffled);
+}
+
+function renderOptions(options, type) {
+  el.optionsContainer.innerHTML = '';
+  options.forEach(option => {
+    const btn = document.createElement('button');
+    btn.className = 'btn-option bg-white border-2 border-gray-300 rounded-xl p-4 text-left font-medium text-gray-800 hover:border-emerald-500 hover:bg-emerald-50';
+    btn.textContent = option;
+    btn.onclick = () => selectAnswer(option, type, btn);
+    el.optionsContainer.appendChild(btn);
+  });
+}
+
+function selectAnswer(selected, type, btnElement) {
+  const correct = state.currentQuestion[type];
+  const isCorrect = selected === correct;
+  
+  // Disable all buttons
+  const buttons = el.optionsContainer.querySelectorAll('button');
+  buttons.forEach(btn => {
+    btn.disabled = true;
+    btn.classList.add('btn-disabled');
+    if (btn.textContent === correct) {
+      btn.classList.add('btn-correct');
+    } else if (btn === btnElement && !isCorrect) {
+      btn.classList.add('btn-incorrect');
+    }
+  });
+  
+  if (type === 'latin') {
+    state.latinAnswer = { selected, correct: isCorrect };
+    setTimeout(() => {
+      state.phase = 'hungarian';
+      showHungarianQuestion();
+    }, 1000);
+  } else {
+    state.hungarianAnswer = { selected, correct: isCorrect };
+    setTimeout(() => showResults(), 1000);
+  }
+}
+
+function showResults() {
+  state.stats.total++;
+  const bothCorrect = state.latinAnswer.correct && state.hungarianAnswer.correct;
+  if (bothCorrect) state.stats.correct++;
+  
+  updateStats();
+  
+  el.questionPhase.classList.add('hidden');
+  el.resultPhase.classList.remove('hidden');
+  
+  if (bothCorrect) {
+    el.resultIcon.innerHTML = `
+      <div class="inline-flex items-center justify-center w-16 h-16 bg-emerald-100 rounded-full">
+        <svg class="w-8 h-8 text-emerald-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
+        </svg>
+      </div>
+    `;
+    el.resultText.textContent = 'Helyes válasz!';
+    el.resultText.className = 'text-2xl font-bold mb-2 text-emerald-600';
+  } else {
+    el.resultIcon.innerHTML = `
+      <div class="inline-flex items-center justify-center w-16 h-16 bg-red-100 rounded-full">
+        <svg class="w-8 h-8 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+        </svg>
+      </div>
+    `;
+    el.resultText.textContent = 'Nem talált!';
+    el.resultText.className = 'text-2xl font-bold mb-2 text-red-600';
+  }
+  
+  el.correctLatin.textContent = state.currentQuestion.latin;
+  el.correctHungarian.textContent = state.currentQuestion.hungarian;
+}
+
+function updateStats() {
+  el.totalQuestions.textContent = state.stats.total;
+  el.correctAnswers.textContent = state.stats.correct;
+  const acc = state.stats.total > 0 ? Math.round((state.stats.correct / state.stats.total) * 100) : 0;
+  el.accuracy.textContent = acc + '%';
+  el.progressBar.style.width = Math.min(acc, 100) + '%';
+}
+
+function stopQuiz() {
+  el.quizSection.classList.add('hidden');
+  el.resultsSection.classList.remove('hidden');
+  
+  el.finalTotal.textContent = state.stats.total;
+  el.finalCorrect.textContent = state.stats.correct;
+  const acc = state.stats.total > 0 ? Math.round((state.stats.correct / state.stats.total) * 100) : 0;
+  el.finalAccuracy.textContent = acc + '%';
+}
+
+function restart() {
+  el.resultsSection.classList.add('hidden');
+  el.uploadSection.classList.remove('hidden');
+  el.fileInput.value = '';
+  el.fileListContent.innerHTML = '';
+  el.fileList.classList.add('hidden');
+  el.statsPreview.classList.add('hidden');
+  state.flowers = [];
+}
+
+function shuffleArray(arr) {
+  const array = [...arr];
+  for (let i = array.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [array[i], array[j]] = [array[j], array[i]];
+  }
+  return array;
+}
+
+// Event listeners
+el.nextButton.addEventListener('click', nextQuestion);
+el.stopButton.addEventListener('click', stopQuiz);
+el.restartButton.addEventListener('click', restart);
+</script>
+<script>(function(){document.addEventListener("click",function(e){var a=e.target.closest("[data-product-id]");if(!a)return;e.preventDefault();var pid=a.getAttribute("data-product-id");if(pid)parent.postMessage({type:"ecto-artifact-link-click",productId:pid},"*")})})();</script>
+</body>
+</html>
