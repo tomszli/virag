@@ -34,9 +34,16 @@
         transition: all 0.2s ease;
     }
     
-    .answer-btn:hover:not(:disabled) {
+    .answer-btn:hover:not(.selected):not(:disabled) {
         transform: scale(1.02);
         box-shadow: 0 8px 16px rgba(0, 0, 0, 0.1);
+        border-color: #10b981;
+    }
+    
+    .selected {
+        background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%) !important;
+        color: white !important;
+        border-color: #2563eb !important;
     }
     
     .correct {
@@ -78,6 +85,7 @@
         transition: all 0.2s;
         cursor: pointer;
         position: relative;
+        flex-shrink: 0;
     }
     
     .checkbox-custom:checked {
@@ -172,15 +180,15 @@
             <div class="quiz-card rounded-2xl shadow-xl p-4 md:p-6 mb-6 fade-in">
                 <div class="grid grid-cols-3 gap-4 text-center">
                     <div>
-                        <p class="text-gray-500 text-sm mb-1">Kérdés</p>
+                        <p class="text-gray-500 text-sm mb-1">Kérdések</p>
                         <p class="text-2xl font-bold text-gray-800"><span id="currentQuestion">0</span>/<span id="totalQuestions">0</span></p>
                     </div>
                     <div>
-                        <p class="text-gray-500 text-sm mb-1">Pontszám</p>
+                        <p class="text-gray-500 text-sm mb-1">Helyes</p>
                         <p class="text-2xl font-bold text-emerald-600" id="score">0</p>
                     </div>
                     <div>
-                        <p class="text-gray-500 text-sm mb-1">Pontosság</p>
+                        <p class="text-gray-500 text-sm mb-1">Százalék</p>
                         <p class="text-2xl font-bold text-teal-600"><span id="accuracy">0</span>%</p>
                     </div>
                 </div>
@@ -192,9 +200,22 @@
                     <img id="questionImage" class="w-full h-full object-contain" alt="Virág kép">
                 </div>
 
-                <div id="questionPhase" class="mb-4">
-                    <h3 class="text-xl font-semibold text-gray-800 mb-4" id="questionTitle">Mi a latin neve?</h3>
-                    <div id="answerButtons" class="grid grid-cols-1 md:grid-cols-2 gap-3"></div>
+                <!-- Latin Phase -->
+                <div id="latinPhase" class="mb-6">
+                    <div class="flex items-center gap-2 mb-4">
+                        <div id="latinIndicator" class="w-8 h-8 rounded-full bg-blue-500 text-white flex items-center justify-center font-bold text-sm">1</div>
+                        <h3 class="text-xl font-semibold text-gray-800">Mi a latin neve?</h3>
+                    </div>
+                    <div id="latinAnswers" class="grid grid-cols-1 md:grid-cols-2 gap-3"></div>
+                </div>
+
+                <!-- Hungarian Phase -->
+                <div id="hungarianPhase" class="mb-4 hidden">
+                    <div class="flex items-center gap-2 mb-4">
+                        <div id="hungarianIndicator" class="w-8 h-8 rounded-full bg-gray-300 text-white flex items-center justify-center font-bold text-sm">2</div>
+                        <h3 class="text-xl font-semibold text-gray-800">Mi a magyar neve?</h3>
+                    </div>
+                    <div id="hungarianAnswers" class="grid grid-cols-1 md:grid-cols-2 gap-3"></div>
                 </div>
 
                 <div id="feedback" class="hidden p-4 rounded-xl mb-4 text-center font-medium"></div>
@@ -223,22 +244,18 @@
                 <p class="text-gray-600">Íme az eredményeid</p>
             </div>
 
-            <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
+            <div class="grid grid-cols-3 gap-4 mb-8">
                 <div class="text-center p-4 bg-emerald-50 rounded-xl">
-                    <p class="text-gray-500 text-sm mb-1">Pontszám</p>
+                    <p class="text-gray-500 text-sm mb-1">Helyes válasz</p>
                     <p class="text-3xl font-bold text-emerald-600" id="finalScore">0</p>
                 </div>
                 <div class="text-center p-4 bg-teal-50 rounded-xl">
-                    <p class="text-gray-500 text-sm mb-1">Kérdések</p>
+                    <p class="text-gray-500 text-sm mb-1">Virágok</p>
                     <p class="text-3xl font-bold text-teal-600" id="finalTotal">0</p>
                 </div>
                 <div class="text-center p-4 bg-cyan-50 rounded-xl">
-                    <p class="text-gray-500 text-sm mb-1">Pontosság</p>
+                    <p class="text-gray-500 text-sm mb-1">Százalék</p>
                     <p class="text-3xl font-bold text-cyan-600"><span id="finalAccuracy">0</span>%</p>
-                </div>
-                <div class="text-center p-4 bg-blue-50 rounded-xl">
-                    <p class="text-gray-500 text-sm mb-1">Helyes</p>
-                    <p class="text-3xl font-bold text-blue-600" id="finalCorrect">0</p>
                 </div>
             </div>
 
@@ -253,11 +270,13 @@
         
         let quizData = [];
         let currentQuestionIndex = 0;
-        let score = 0;
-        let correctAnswers = 0;
-        let currentPhase = 'latin'; // 'latin' or 'hungarian'
+        let correctFlowerCount = 0;
+        let answeredFlowersCount = 0;
         let currentQuestionData = null;
-        let answered = false;
+        let selectedLatin = null;
+        let selectedHungarian = null;
+        let latinAnswered = false;
+        let questionChecked = false;
 
         const setupScreen = document.getElementById('setupScreen');
         const quizScreen = document.getElementById('quizScreen');
@@ -270,6 +289,10 @@
         const loadingProgress = document.getElementById('loadingProgress');
         const errorMessages = document.getElementById('errorMessages');
         const errorList = document.getElementById('errorList');
+        const latinPhase = document.getElementById('latinPhase');
+        const hungarianPhase = document.getElementById('hungarianPhase');
+        const latinIndicator = document.getElementById('latinIndicator');
+        const hungarianIndicator = document.getElementById('hungarianIndicator');
 
         startBtn.addEventListener('click', loadAndStartQuiz);
         stopBtn.addEventListener('click', showResults);
@@ -306,31 +329,31 @@
                     const result = await mammoth.convertToHtml({ arrayBuffer });
                     const html = result.value;
                     
-                    // Parse HTML to extract tables with images and names
                     const parser = new DOMParser();
                     const doc = parser.parseFromString(html, 'text/html');
-                    const tables = doc.querySelectorAll('table');
+                    const images = doc.querySelectorAll('img');
                     
-                    tables.forEach(table => {
-                        const rows = table.querySelectorAll('tr');
-                        rows.forEach((row, idx) => {
-                            if (idx === 0) return; // Skip header
-                            const cells = row.querySelectorAll('td');
-                            if (cells.length >= 3) {
-                                const imgElement = cells[0].querySelector('img');
-                                const latinName = cells[1]?.textContent.trim();
-                                const hungarianName = cells[2]?.textContent.trim();
-                                
-                                if (imgElement && latinName && hungarianName) {
-                                    quizData.push({
-                                        image: imgElement.src,
-                                        latinName: latinName,
-                                        hungarianName: hungarianName,
-                                        source: filename
-                                    });
-                                }
+                    images.forEach((img, idx) => {
+                        let row = img.closest('tr');
+                        if (!row) return;
+                        
+                        const cells = row.querySelectorAll('td');
+                        if (cells.length >= 3) {
+                            const latinCell = cells[1];
+                            const hungarianCell = cells[2];
+                            
+                            const latinName = latinCell?.textContent.trim();
+                            const hungarianName = hungarianCell?.textContent.trim();
+                            
+                            if (latinName && hungarianName && img.src) {
+                                quizData.push({
+                                    image: img.src,
+                                    latinName: latinName,
+                                    hungarianName: hungarianName,
+                                    source: filename
+                                });
                             }
-                        });
+                        }
                     });
                 } catch (err) {
                     errors.push(`${filename}: ${err.message}`);
@@ -351,7 +374,6 @@
                 return;
             }
 
-            // Shuffle questions
             quizData = shuffleArray(quizData);
             startQuiz();
         }
@@ -363,10 +385,8 @@
 
         function startQuiz() {
             currentQuestionIndex = 0;
-            score = 0;
-            correctAnswers = 0;
-            currentPhase = 'latin';
-            answered = false;
+            correctFlowerCount = 0;
+            answeredFlowersCount = 0;
             
             setupScreen.classList.add('hidden');
             resultsScreen.classList.add('hidden');
@@ -383,30 +403,35 @@
             }
 
             currentQuestionData = quizData[currentQuestionIndex];
-            currentPhase = 'latin';
-            answered = false;
+            selectedLatin = null;
+            selectedHungarian = null;
+            latinAnswered = false;
+            questionChecked = false;
             
             document.getElementById('questionImage').src = currentQuestionData.image;
-            document.getElementById('questionTitle').textContent = 'Mi a latin neve?';
             document.getElementById('feedback').classList.add('hidden');
             nextBtn.classList.add('hidden');
             
-            renderAnswers('latin');
+            // Reset indicators
+            latinIndicator.className = 'w-8 h-8 rounded-full bg-blue-500 text-white flex items-center justify-center font-bold text-sm';
+            hungarianIndicator.className = 'w-8 h-8 rounded-full bg-gray-300 text-white flex items-center justify-center font-bold text-sm';
+            
+            latinPhase.classList.remove('hidden');
+            hungarianPhase.classList.add('hidden');
+            
+            renderLatinAnswers();
             updateStats();
         }
 
-        function renderAnswers(phase) {
-            const answersDiv = document.getElementById('answerButtons');
+        function renderLatinAnswers() {
+            const answersDiv = document.getElementById('latinAnswers');
             answersDiv.innerHTML = '';
             
-            const correctAnswer = phase === 'latin' ? currentQuestionData.latinName : currentQuestionData.hungarianName;
-            const field = phase === 'latin' ? 'latinName' : 'hungarianName';
-            
-            // Get 3 random wrong answers
+            const correctAnswer = currentQuestionData.latinName;
             const wrongAnswers = quizData
-                .filter(q => q[field] !== correctAnswer)
-                .map(q => q[field])
-                .filter((v, i, a) => a.indexOf(v) === i) // unique
+                .filter(q => q.latinName !== correctAnswer)
+                .map(q => q.latinName)
+                .filter((v, i, a) => a.indexOf(v) === i)
                 .sort(() => Math.random() - 0.5)
                 .slice(0, 3);
             
@@ -414,60 +439,127 @@
             
             allAnswers.forEach(answer => {
                 const btn = document.createElement('button');
-                btn.className = 'answer-btn p-4 rounded-xl bg-white border-2 border-gray-200 text-gray-700 font-medium text-left hover:border-emerald-300 transition';
+                btn.className = 'answer-btn p-4 rounded-xl bg-white border-2 border-gray-200 text-gray-700 font-medium text-left';
                 btn.textContent = answer;
-                btn.onclick = () => handleAnswer(answer, correctAnswer, btn);
+                btn.onclick = () => handleLatinSelection(answer, btn);
                 answersDiv.appendChild(btn);
             });
         }
 
-        function handleAnswer(selected, correct, buttonElement) {
-            if (answered) return;
-            answered = true;
+        function handleLatinSelection(answer, buttonElement) {
+            if (latinAnswered || questionChecked) return;
             
-            const buttons = document.querySelectorAll('#answerButtons button');
-            buttons.forEach(btn => btn.disabled = true);
+            selectedLatin = answer;
+            latinAnswered = true;
             
-            const isCorrect = selected === correct;
-            const feedback = document.getElementById('feedback');
-            
-            if (isCorrect) {
-                buttonElement.classList.add('correct');
-                feedback.className = 'p-4 rounded-xl mb-4 text-center font-medium bg-emerald-50 text-emerald-700';
-                feedback.textContent = '✓ Helyes válasz!';
-                
-                if (currentPhase === 'hungarian') {
-                    score += 2;
-                    correctAnswers++;
-                } else {
-                    score += 1;
+            const buttons = document.querySelectorAll('#latinAnswers button');
+            buttons.forEach(btn => {
+                btn.disabled = true;
+                if (btn === buttonElement) {
+                    btn.classList.add('selected');
                 }
-            } else {
-                buttonElement.classList.add('incorrect');
-                buttons.forEach(btn => {
-                    if (btn.textContent === correct) {
-                        btn.classList.add('correct');
-                    }
-                });
-                feedback.className = 'p-4 rounded-xl mb-4 text-center font-medium bg-red-50 text-red-700';
-                feedback.textContent = `✗ Helytelen. A helyes válasz: ${correct}`;
+            });
+            
+            // Show Hungarian phase
+            setTimeout(() => {
+                hungarianPhase.classList.remove('hidden');
+                hungarianIndicator.className = 'w-8 h-8 rounded-full bg-blue-500 text-white flex items-center justify-center font-bold text-sm';
+                renderHungarianAnswers();
+            }, 300);
+        }
+
+        function renderHungarianAnswers() {
+            const answersDiv = document.getElementById('hungarianAnswers');
+            answersDiv.innerHTML = '';
+            
+            const correctAnswer = currentQuestionData.hungarianName;
+            const wrongAnswers = quizData
+                .filter(q => q.hungarianName !== correctAnswer)
+                .map(q => q.hungarianName)
+                .filter((v, i, a) => a.indexOf(v) === i)
+                .sort(() => Math.random() - 0.5)
+                .slice(0, 3);
+            
+            const allAnswers = shuffleArray([correctAnswer, ...wrongAnswers]);
+            
+            allAnswers.forEach(answer => {
+                const btn = document.createElement('button');
+                btn.className = 'answer-btn p-4 rounded-xl bg-white border-2 border-gray-200 text-gray-700 font-medium text-left';
+                btn.textContent = answer;
+                btn.onclick = () => handleHungarianSelection(answer, btn);
+                answersDiv.appendChild(btn);
+            });
+        }
+
+        function handleHungarianSelection(answer, buttonElement) {
+            if (questionChecked) return;
+            
+            selectedHungarian = answer;
+            questionChecked = true;
+            
+            const buttons = document.querySelectorAll('#hungarianAnswers button');
+            buttons.forEach(btn => {
+                btn.disabled = true;
+                if (btn === buttonElement) {
+                    btn.classList.add('selected');
+                }
+            });
+            
+            setTimeout(checkAnswers, 300);
+        }
+
+        function checkAnswers() {
+            const latinCorrect = selectedLatin === currentQuestionData.latinName;
+            const hungarianCorrect = selectedHungarian === currentQuestionData.hungarianName;
+            const bothCorrect = latinCorrect && hungarianCorrect;
+            
+            answeredFlowersCount++;
+            if (bothCorrect) {
+                correctFlowerCount++;
             }
             
-            feedback.classList.remove('hidden');
-            updateStats();
-            
-            setTimeout(() => {
-                if (currentPhase === 'latin' && isCorrect) {
-                    // Move to Hungarian name phase
-                    currentPhase = 'hungarian';
-                    answered = false;
-                    document.getElementById('questionTitle').textContent = 'Mi a magyar neve?';
-                    feedback.classList.add('hidden');
-                    renderAnswers('hungarian');
-                } else {
-                    nextBtn.classList.remove('hidden');
+            // Show correct/incorrect for Latin
+            const latinButtons = document.querySelectorAll('#latinAnswers button');
+            latinButtons.forEach(btn => {
+                btn.classList.remove('selected');
+                if (btn.textContent === currentQuestionData.latinName) {
+                    btn.classList.add('correct');
+                } else if (btn.textContent === selectedLatin && !latinCorrect) {
+                    btn.classList.add('incorrect');
                 }
-            }, 1500);
+            });
+            
+            // Show correct/incorrect for Hungarian
+            const hungarianButtons = document.querySelectorAll('#hungarianAnswers button');
+            hungarianButtons.forEach(btn => {
+                btn.classList.remove('selected');
+                if (btn.textContent === currentQuestionData.hungarianName) {
+                    btn.classList.add('correct');
+                } else if (btn.textContent === selectedHungarian && !hungarianCorrect) {
+                    btn.classList.add('incorrect');
+                }
+            });
+            
+            // Update indicators
+            latinIndicator.className = `w-8 h-8 rounded-full ${latinCorrect ? 'bg-emerald-500' : 'bg-red-500'} text-white flex items-center justify-center font-bold text-sm`;
+            hungarianIndicator.className = `w-8 h-8 rounded-full ${hungarianCorrect ? 'bg-emerald-500' : 'bg-red-500'} text-white flex items-center justify-center font-bold text-sm`;
+            
+            // Show feedback
+            const feedback = document.getElementById('feedback');
+            if (bothCorrect) {
+                feedback.className = 'p-4 rounded-xl mb-4 text-center font-medium bg-emerald-50 text-emerald-700';
+                feedback.textContent = '✓ Mindkét név helyes! Kiváló!';
+            } else if (latinCorrect || hungarianCorrect) {
+                feedback.className = 'p-4 rounded-xl mb-4 text-center font-medium bg-amber-50 text-amber-700';
+                feedback.textContent = `⚠ Részben helyes. Latin: ${latinCorrect ? '✓' : '✗'}, Magyar: ${hungarianCorrect ? '✓' : '✗'}`;
+            } else {
+                feedback.className = 'p-4 rounded-xl mb-4 text-center font-medium bg-red-50 text-red-700';
+                feedback.textContent = '✗ Mindkét válasz helytelen.';
+            }
+            feedback.classList.remove('hidden');
+            
+            updateStats();
+            nextBtn.classList.remove('hidden');
         }
 
         function nextQuestion() {
@@ -476,10 +568,10 @@
         }
 
         function updateStats() {
-            document.getElementById('currentQuestion').textContent = currentQuestionIndex + 1;
+            document.getElementById('currentQuestion').textContent = Math.min(currentQuestionIndex + 1, quizData.length);
             document.getElementById('totalQuestions').textContent = quizData.length;
-            document.getElementById('score').textContent = score;
-            const accuracy = currentQuestionIndex > 0 ? Math.round((correctAnswers / currentQuestionIndex) * 100) : 0;
+            document.getElementById('score').textContent = correctFlowerCount;
+            const accuracy = answeredFlowersCount > 0 ? Math.round((correctFlowerCount / answeredFlowersCount) * 100) : 0;
             document.getElementById('accuracy').textContent = accuracy;
         }
 
@@ -487,10 +579,9 @@
             quizScreen.classList.add('hidden');
             resultsScreen.classList.remove('hidden');
             
-            document.getElementById('finalScore').textContent = score;
-            document.getElementById('finalTotal').textContent = quizData.length;
-            document.getElementById('finalCorrect').textContent = correctAnswers;
-            const accuracy = quizData.length > 0 ? Math.round((correctAnswers / quizData.length) * 100) : 0;
+            document.getElementById('finalScore').textContent = correctFlowerCount;
+            document.getElementById('finalTotal').textContent = answeredFlowersCount;
+            const accuracy = answeredFlowersCount > 0 ? Math.round((correctFlowerCount / answeredFlowersCount) * 100) : 0;
             document.getElementById('finalAccuracy').textContent = accuracy;
         }
 
