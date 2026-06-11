@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Virág Kvíz - GitHub Pages</title>
+<title>Virág Kvíz</title>
 <script src="https://cdn.tailwindcss.com"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/mammoth/1.6.0/mammoth.browser.min.js"></script>
 <style>
@@ -28,6 +28,16 @@
     .btn-primary:disabled {
         opacity: 0.5;
         cursor: not-allowed;
+    }
+
+    .btn-secondary {
+        background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
+        transition: all 0.3s ease;
+    }
+    
+    .btn-secondary:hover:not(:disabled) {
+        transform: translateY(-2px);
+        box-shadow: 0 12px 24px rgba(59, 130, 246, 0.3);
     }
     
     .answer-btn {
@@ -103,6 +113,16 @@
         font-size: 0.875rem;
         font-weight: bold;
     }
+
+    .mode-card {
+        transition: all 0.3s ease;
+        cursor: pointer;
+    }
+
+    .mode-card:hover {
+        transform: translateY(-4px);
+        box-shadow: 0 20px 40px rgba(0, 0, 0, 0.15);
+    }
 </style>
 </head>
 <body class="min-h-screen bg-gradient-to-br from-emerald-50 via-teal-50 to-cyan-50">
@@ -117,13 +137,13 @@
                 <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z" />
                 </svg>
-                4. verzió - virágkötészet tanuláshoz
+                5. verzió - virágkötészet tanuláshoz
             </div>
         </div>
 
         <!-- Setup Screen -->
         <div id="setupScreen" class="quiz-card rounded-2xl shadow-2xl p-6 md:p-8 fade-in">
-            <h2 class="text-2xl font-bold text-gray-800 mb-6">Kvíz beállítása</h2>
+            <h2 class="text-2xl font-bold text-gray-800 mb-6">Dokumentumok kiválasztása</h2>
             
             <div class="mb-6">
                 <p class="text-gray-600 mb-4">Válaszd ki, mely dokumentumokból szeretnél tanulni:</p>
@@ -169,8 +189,54 @@
                 </div>
             </div>
 
-            <button id="startBtn" class="btn-primary w-full py-4 px-6 rounded-xl text-white font-semibold text-lg shadow-lg">
-                Kvíz indítása
+            <button id="loadBtn" class="btn-primary w-full py-4 px-6 rounded-xl text-white font-semibold text-lg shadow-lg">
+                Betöltés
+            </button>
+        </div>
+
+        <!-- Mode Selection Screen -->
+        <div id="modeScreen" class="hidden quiz-card rounded-2xl shadow-2xl p-6 md:p-8 fade-in">
+            <div class="text-center mb-8">
+                <h2 class="text-2xl font-bold text-gray-800 mb-2">Válassz módot</h2>
+                <p class="text-gray-600"><span id="loadedCount">0</span> virág betöltve</p>
+            </div>
+
+            <div class="grid md:grid-cols-2 gap-6 mb-6">
+                <!-- Teszt Mode -->
+                <div id="testModeCard" class="mode-card quiz-card rounded-2xl p-6 border-2 border-gray-200 hover:border-emerald-500">
+                    <div class="text-center">
+                        <div class="inline-flex items-center justify-center w-16 h-16 rounded-full bg-gradient-to-br from-emerald-500 to-teal-600 mb-4 shadow-lg">
+                            <span class="text-3xl">📝</span>
+                        </div>
+                        <h3 class="text-xl font-bold text-gray-800 mb-2">Teszt mód</h3>
+                        <p class="text-gray-600 text-sm mb-4">Teszteld a tudásod! Válaszd ki a latin és magyar neveket a képekhez.</p>
+                        <ul class="text-left text-sm text-gray-600 space-y-1">
+                            <li>✓ Pontozás és statisztika</li>
+                            <li>✓ Kétlépcsős kérdezés</li>
+                            <li>✓ Visszajelzés</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <!-- Tanulás Mode -->
+                <div id="learnModeCard" class="mode-card quiz-card rounded-2xl p-6 border-2 border-gray-200 hover:border-blue-500">
+                    <div class="text-center">
+                        <div class="inline-flex items-center justify-center w-16 h-16 rounded-full bg-gradient-to-br from-blue-500 to-indigo-600 mb-4 shadow-lg">
+                            <span class="text-3xl">🎓</span>
+                        </div>
+                        <h3 class="text-xl font-bold text-gray-800 mb-2">Tanulás mód</h3>
+                        <p class="text-gray-600 text-sm mb-4">Nézd át a virágokat! Közvetlenül látod a képet és a helyes neveket.</p>
+                        <ul class="text-left text-sm text-gray-600 space-y-1">
+                            <li>✓ Nincs pontozás</li>
+                            <li>✓ Kártya mód</li>
+                            <li>✓ Saját tempóban</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+
+            <button id="backToSetupBtn" class="w-full py-3 px-6 rounded-xl bg-gray-200 hover:bg-gray-300 text-gray-700 font-semibold transition">
+                Vissza a fájl választáshoz
             </button>
         </div>
 
@@ -232,6 +298,45 @@
             </div>
         </div>
 
+        <!-- Learn Screen -->
+        <div id="learnScreen" class="hidden">
+            <!-- Progress Bar -->
+            <div class="quiz-card rounded-2xl shadow-xl p-4 md:p-6 mb-6 fade-in">
+                <div class="text-center">
+                    <p class="text-gray-500 text-sm mb-1">Haladás</p>
+                    <p class="text-3xl font-bold text-blue-600"><span id="learnCurrent">0</span> / <span id="learnTotal">0</span></p>
+                </div>
+            </div>
+
+            <!-- Flashcard -->
+            <div class="quiz-card rounded-2xl shadow-2xl p-6 md:p-8 mb-6 fade-in">
+                <div class="mb-6 rounded-xl overflow-hidden bg-gray-100 flex items-center justify-center min-h-[300px] max-h-[400px]">
+                    <img id="learnImage" class="w-full h-full object-contain" alt="Virág kép">
+                </div>
+
+                <div class="space-y-4">
+                    <div class="p-5 bg-gradient-to-r from-emerald-50 to-teal-50 rounded-xl border-2 border-emerald-200">
+                        <p class="text-sm text-emerald-600 font-medium mb-1">Latin név</p>
+                        <p id="learnLatinName" class="text-xl font-bold text-gray-800"></p>
+                    </div>
+                    <div class="p-5 bg-gradient-to-r from-blue-50 to-indigo-50 rounded-xl border-2 border-blue-200">
+                        <p class="text-sm text-blue-600 font-medium mb-1">Magyar név</p>
+                        <p id="learnHungarianName" class="text-xl font-bold text-gray-800"></p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Control Buttons -->
+            <div class="flex gap-3 fade-in">
+                <button id="backToModeBtn" class="flex-1 py-3 px-6 rounded-xl bg-gray-200 hover:bg-gray-300 text-gray-700 font-semibold transition">
+                    Vissza a főoldalra
+                </button>
+                <button id="learnNextBtn" class="flex-1 py-3 px-6 rounded-xl btn-secondary text-white font-semibold">
+                    Következő
+                </button>
+            </div>
+        </div>
+
         <!-- Results Screen -->
         <div id="resultsScreen" class="hidden quiz-card rounded-2xl shadow-2xl p-6 md:p-8 fade-in">
             <div class="text-center mb-8">
@@ -259,14 +364,12 @@
                 </div>
             </div>
 
-            <div class="flex flex-col md:flex-row gap-3">
-                <button id="homeBtn" class="flex-1 py-4 px-6 rounded-xl bg-gray-200 hover:bg-gray-300 text-gray-700 font-semibold text-lg transition">
+            <button id="restartBtn" class="btn-primary w-full py-4 px-6 rounded-xl text-white font-semibold text-lg shadow-lg">
+                Új kvíz indítása
+            </button>
+			<button id="backToModeBtn" class="flex-1 py-3 px-6 rounded-xl bg-gray-200 hover:bg-gray-300 text-gray-700 font-semibold transition">
                     Vissza a főoldalra
                 </button>
-                <button id="restartBtn" class="flex-1 btn-primary py-4 px-6 rounded-xl text-white font-semibold text-lg shadow-lg">
-                    Új kvíz indítása
-                </button>
-            </div>
         </div>
     </div>
 
@@ -282,16 +385,23 @@
         let selectedHungarian = null;
         let latinAnswered = false;
         let questionChecked = false;
-        let lastSelectedFiles = [];
+        let currentMode = null; // 'test' or 'learn'
+        let learnIndex = 0;
 
         const setupScreen = document.getElementById('setupScreen');
+        const modeScreen = document.getElementById('modeScreen');
         const quizScreen = document.getElementById('quizScreen');
+        const learnScreen = document.getElementById('learnScreen');
         const resultsScreen = document.getElementById('resultsScreen');
-        const startBtn = document.getElementById('startBtn');
+        const loadBtn = document.getElementById('loadBtn');
+        const testModeCard = document.getElementById('testModeCard');
+        const learnModeCard = document.getElementById('learnModeCard');
+        const backToSetupBtn = document.getElementById('backToSetupBtn');
         const stopBtn = document.getElementById('stopBtn');
         const nextBtn = document.getElementById('nextBtn');
         const restartBtn = document.getElementById('restartBtn');
-        const homeBtn = document.getElementById('homeBtn');
+        const backToModeBtn = document.getElementById('backToModeBtn');
+        const learnNextBtn = document.getElementById('learnNextBtn');
         const loadingState = document.getElementById('loadingState');
         const loadingProgress = document.getElementById('loadingProgress');
         const errorMessages = document.getElementById('errorMessages');
@@ -301,13 +411,17 @@
         const latinIndicator = document.getElementById('latinIndicator');
         const hungarianIndicator = document.getElementById('hungarianIndicator');
 
-        startBtn.addEventListener('click', loadAndStartQuiz);
+        loadBtn.addEventListener('click', loadDocuments);
+        testModeCard.addEventListener('click', () => startMode('test'));
+        learnModeCard.addEventListener('click', () => startMode('learn'));
+        backToSetupBtn.addEventListener('click', backToSetup);
         stopBtn.addEventListener('click', showResults);
         nextBtn.addEventListener('click', nextQuestion);
-        restartBtn.addEventListener('click', restartWithSameFiles);
-        homeBtn.addEventListener('click', backToHome);
+        restartBtn.addEventListener('click', backToMode);
+        backToModeBtn.addEventListener('click', backToMode);
+        learnNextBtn.addEventListener('click', nextLearnCard);
 
-        async function loadAndStartQuiz() {
+        async function loadDocuments() {
             const checkboxes = document.querySelectorAll('#fileCheckboxes input[type="checkbox"]:checked');
             const selectedFiles = Array.from(checkboxes).map(cb => cb.value);
             
@@ -316,10 +430,9 @@
                 return;
             }
 
-            lastSelectedFiles = selectedFiles;
             errorMessages.classList.add('hidden');
             loadingState.classList.remove('hidden');
-            startBtn.disabled = true;
+            loadBtn.disabled = true;
             
             quizData = [];
             const errors = [];
@@ -371,7 +484,7 @@
             }
 
             loadingState.classList.add('hidden');
-            startBtn.disabled = false;
+            loadBtn.disabled = false;
 
             if (errors.length > 0) {
                 errorList.innerHTML = errors.map(e => `<li>• ${e}</li>`).join('');
@@ -384,7 +497,7 @@
             }
 
             quizData = shuffleArray(quizData);
-            startQuiz();
+            showModeSelection();
         }
 
         function showError(message) {
@@ -392,13 +505,45 @@
             errorMessages.classList.remove('hidden');
         }
 
+        function showModeSelection() {
+            setupScreen.classList.add('hidden');
+            quizScreen.classList.add('hidden');
+            learnScreen.classList.add('hidden');
+            resultsScreen.classList.add('hidden');
+            modeScreen.classList.remove('hidden');
+            document.getElementById('loadedCount').textContent = quizData.length;
+        }
+
+        function backToSetup() {
+            modeScreen.classList.add('hidden');
+            setupScreen.classList.remove('hidden');
+            quizData = [];
+        }
+
+        function backToMode() {
+            quizScreen.classList.add('hidden');
+            learnScreen.classList.add('hidden');
+            resultsScreen.classList.add('hidden');
+            modeScreen.classList.remove('hidden');
+        }
+
+        function startMode(mode) {
+            currentMode = mode;
+            if (mode === 'test') {
+                startQuiz();
+            } else {
+                startLearn();
+            }
+        }
+
         function startQuiz() {
             currentQuestionIndex = 0;
             correctFlowerCount = 0;
             answeredFlowersCount = 0;
             
-            setupScreen.classList.add('hidden');
+            modeScreen.classList.add('hidden');
             resultsScreen.classList.add('hidden');
+            learnScreen.classList.add('hidden');
             quizScreen.classList.remove('hidden');
             
             updateStats();
@@ -584,6 +729,37 @@
             document.getElementById('accuracy').textContent = accuracy;
         }
 
+        function startLearn() {
+            learnIndex = 0;
+            quizData = shuffleArray(quizData);
+            
+            modeScreen.classList.add('hidden');
+            resultsScreen.classList.add('hidden');
+            quizScreen.classList.add('hidden');
+            learnScreen.classList.remove('hidden');
+            
+            showLearnCard();
+        }
+
+        function showLearnCard() {
+            if (learnIndex >= quizData.length) {
+                learnIndex = 0; // Loop back to start
+            }
+
+            const currentCard = quizData[learnIndex];
+            
+            document.getElementById('learnImage').src = currentCard.image;
+            document.getElementById('learnLatinName').textContent = currentCard.latinName;
+            document.getElementById('learnHungarianName').textContent = currentCard.hungarianName;
+            document.getElementById('learnCurrent').textContent = learnIndex + 1;
+            document.getElementById('learnTotal').textContent = quizData.length;
+        }
+
+        function nextLearnCard() {
+            learnIndex++;
+            showLearnCard();
+        }
+
         function showResults() {
             quizScreen.classList.add('hidden');
             resultsScreen.classList.remove('hidden');
@@ -592,31 +768,6 @@
             document.getElementById('finalTotal').textContent = answeredFlowersCount;
             const accuracy = answeredFlowersCount > 0 ? Math.round((correctFlowerCount / answeredFlowersCount) * 100) : 0;
             document.getElementById('finalAccuracy').textContent = accuracy;
-        }
-
-        function restartWithSameFiles() {
-            // Újrakeverés és újrakezdés ugyanazokkal a fájlokkal
-            if (lastSelectedFiles.length === 0) {
-                backToHome();
-                return;
-            }
-            
-            quizData = shuffleArray(quizData);
-            resultsScreen.classList.add('hidden');
-            startQuiz();
-        }
-
-        function backToHome() {
-            // Teljes reset a főoldalra
-            resultsScreen.classList.add('hidden');
-            quizScreen.classList.add('hidden');
-            setupScreen.classList.remove('hidden');
-            errorMessages.classList.add('hidden');
-            quizData = [];
-            lastSelectedFiles = [];
-            currentQuestionIndex = 0;
-            correctFlowerCount = 0;
-            answeredFlowersCount = 0;
         }
 
         function shuffleArray(array) {
@@ -628,6 +779,7 @@
             return newArray;
         }
     </script>
+<script>(function(){document.addEventListener("click",function(e){var a=e.target.closest("[data-product-id]");if(!a)return;e.preventDefault();var pid=a.getAttribute("data-product-id");if(pid)parent.postMessage({type:"ecto-artifact-link-click",productId:pid},"*")})})();</script>
 <script>(function(){document.addEventListener("click",function(e){var a=e.target.closest("[data-product-id]");if(!a)return;e.preventDefault();var pid=a.getAttribute("data-product-id");if(pid)parent.postMessage({type:"ecto-artifact-link-click",productId:pid},"*")})})();</script>
 </body>
 </html>
