@@ -401,6 +401,7 @@
         const nextBtn = document.getElementById('nextBtn');
         const restartBtn = document.getElementById('restartBtn');
         const backToModeBtn = document.getElementById('backToModeBtn');
+		const backToModeBtn2 = document.getElementById('backToModeBtn2');
         const learnNextBtn = document.getElementById('learnNextBtn');
         const loadingState = document.getElementById('loadingState');
         const loadingProgress = document.getElementById('loadingProgress');
@@ -419,6 +420,7 @@
         nextBtn.addEventListener('click', nextQuestion);
         restartBtn.addEventListener('click', backToMode);
         backToModeBtn.addEventListener('click', backToMode);
+		backToModeBtn2.addEventListener('click', backToMode);
         learnNextBtn.addEventListener('click', nextLearnCard);
 
         async function loadDocuments() {
